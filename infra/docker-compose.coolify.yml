@@ -1,0 +1,44 @@
+# PINN BAI — compose para Coolify (modo imagem, registry interno pinn-vps)
+# Imagens = as de producao ja validadas (tag prod-20261102). Supabase na nuvem
+# (externo). Sem volume de estado. Env vars injetadas no Coolify (nao no repo).
+services:
+  api:
+    image: 172.17.0.1:5000/pinn-bai-api:prod-20261102
+    restart: unless-stopped
+    expose:
+      - "8787"
+    networks:
+      - root_default
+
+  backend:
+    image: 172.17.0.1:5000/pinn-bai-backend:prod-20261102
+    restart: unless-stopped
+    expose:
+      - "8000"
+    networks:
+      - root_default
+
+  web:
+    image: 172.17.0.1:5000/pinn-bai-web:prod-20261102
+    restart: unless-stopped
+    expose:
+      - "80"
+    depends_on:
+      - api
+      - backend
+    networks:
+      - root_default
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=root_default
+      - traefik.http.routers.pinn-bai-app.rule=Host(`bai.pinnpb.com`) || Host(`bai.srv879715.hstgr.cloud`)
+      - traefik.http.routers.pinn-bai-app.entrypoints=web,websecure
+      - traefik.http.routers.pinn-bai-app.tls=true
+      - traefik.http.routers.pinn-bai-app.tls.certresolver=mytlschallenge
+      - traefik.http.routers.pinn-bai-app.service=pinn-bai-app-svc
+      - traefik.http.services.pinn-bai-app-svc.loadbalancer.server.port=80
+
+networks:
+  root_default:
+    external: true
+    name: root_default
