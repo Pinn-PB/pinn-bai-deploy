@@ -17,6 +17,14 @@ services:
       - "8000"
     networks:
       - root_default
+    # A imagem traz um healthcheck embutido apontando /email/health (404).
+    # A rota real e /health. Sobrescreve aqui (igual fazia o compose manual).
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   web:
     image: 172.17.0.1:5000/pinn-bai-web:prod-20261102
